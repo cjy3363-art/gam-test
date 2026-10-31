@@ -61,6 +61,29 @@ SOURCES: list[tuple[str, str, str]] = [
      "https://ourworldindata.org/grapher/annual-working-hours-per-worker.csv"
      "?csvType=full&useColumnShortNames=true"),
 
+    ("korea-working-hours.csv",
+     "연간 근로시간 전체 CSV — 한국·일본·미국·독일·프랑스 비교용 (Our World in Data)",
+     "https://ourworldindata.org/grapher/annual-working-hours-per-worker.csv"
+     "?v=1&csvType=full&useColumnShortNames=false"),
+
+    ("korea-meat-supply-total.csv",
+     "1인당 연간 육류 공급량 전체 CSV · kg (Our World in Data · FAO 식품수급표)",
+     "https://ourworldindata.org/grapher/meat-supply-per-person.csv"
+     "?v=1&csvType=full&useColumnShortNames=false"),
+
+    ("korea-meat-supply-by-type.csv",
+     "1인당 연간 육류 종류별 공급량 전체 CSV · kg (Our World in Data · FAO 식품수급표)",
+     "https://ourworldindata.org/grapher/per-capita-meat-consumption-by-type-kilograms-per-year.csv"
+     "?v=1&csvType=full&useColumnShortNames=false"),
+
+    ("korea-co2-emissions.csv",
+     "CO₂ 배출량 전체 CSV · 전 국가 (Our World in Data owid_co2)",
+     "https://catalog.ourworldindata.org/emissions/owid_co2/owid_co2.csv"),
+
+    ("korea-energy-use.csv",
+     "에너지 사용 · 발전 전체 CSV · 전 국가 (Our World in Data owid_energy)",
+     "https://catalog.ourworldindata.org/energy/owid_energy/owid_energy.csv"),
+
     ("life_expectancy.csv",
      "기대수명 (Our World in Data)",
      "https://ourworldindata.org/grapher/life-expectancy.csv"
@@ -87,6 +110,49 @@ SOURCES: list[tuple[str, str, str]] = [
      "https://api.worldbank.org/v2/country/KOR/indicator/SP.DYN.LE00.IN"
      "?format=json&date=2000%3A2025&per_page=100"),
 
+    *[(f"korea_{fname}_2000_2024.json",
+       f"한국 {kn} 2000~2024 (World Bank {code})",
+       f"https://api.worldbank.org/v2/country/KOR/indicator/{code}"
+       "?format=json&date=2000%3A2024&per_page=100")
+      for fname, kn, code in (
+          ("fertility", "합계출산율", "SP.DYN.TFRT.IN"),
+          ("birth_rate", "조출생률", "SP.DYN.CBRT.IN"),
+          ("population", "총인구", "SP.POP.TOTL"),
+          ("population_growth", "인구증가율", "SP.POP.GROW"),
+      )],
+
+    # 소득 · 경제성장 — 5개국 × 5개 지표를 국가별 · 지표별로 따로 받는다
+    *[(f"economy_{cc}_{code}_1990_2023.json",
+       f"{cn} {kn} 1990~2023 (World Bank {code})",
+       f"https://api.worldbank.org/v2/country/{cc}/indicator/{code}"
+       "?format=json&date=1990%3A2023&per_page=100")
+      for cc, cn in (("KOR", "한국"), ("JPN", "일본"), ("USA", "미국"),
+                     ("DEU", "독일"), ("FRA", "프랑스"))
+      for code, kn in (("NY.GDP.PCAP.CD", "1인당 명목 GDP"),
+                       ("NY.GNP.PCAP.CD", "1인당 명목 GNI"),
+                       ("NY.GDP.MKTP.KD.ZG", "경제성장률"),
+                       ("NY.GDP.PCAP.KD", "실질 1인당 GDP"),
+                       ("NY.GNP.PCAP.KD", "실질 1인당 GNI"))],
+
+    # 고령화 · 인구구조 — 2개국 × 3개 지표를 국가별 · 지표별로 따로 받는다
+    *[(f"aging_{cc}_{code}_2000_2024.json",
+       f"{cn} {kn} 2000~2024 (World Bank {code})",
+       f"https://api.worldbank.org/v2/country/{cc}/indicator/{code}"
+       "?format=json&date=2000:2024&per_page=100")
+      for cc, cn in (("KOR", "한국"), ("JPN", "일본"))
+      for code, kn in (("SP.POP.65UP.TO.ZS", "65세 이상 인구 비율"),
+                       ("SP.POP.65UP.TO", "65세 이상 인구수"),
+                       ("SP.POP.DPND.OL", "노년부양비"))],
+
+    # 소비자물가 · 화폐 구매력 — 3개국 × 2개 지표를 국가별 · 지표별로 따로 받는다
+    *[(f"korea-cpi_{cc}_{code}_2000_2024.json",
+       f"{cn} {kn} 2000~2024 (World Bank {code})",
+       f"https://api.worldbank.org/v2/country/{cc}/indicator/{code}"
+       "?format=json&date=2000%3A2024&per_page=100")
+      for cc, cn in (("KOR", "한국"), ("JPN", "일본"), ("USA", "미국"))
+      for code, kn in (("FP.CPI.TOTL", "소비자물가지수(2010=100)"),
+                       ("FP.CPI.TOTL.ZG", "연간 소비자물가 상승률"))],
+
     ("wb_internet.json",
      "인터넷 사용률 전세계 (World Bank IT.NET.USER.ZS)",
      "https://api.worldbank.org/v2/country/all/indicator/IT.NET.USER.ZS"
@@ -96,6 +162,49 @@ SOURCES: list[tuple[str, str, str]] = [
      "원달러 환율 1999~ (Frankfurter · ECB)",
      "https://api.frankfurter.dev/v1/1999-01-04..2024-12-31"
      "?base=USD&symbols=KRW"),
+
+    ("usd-krw-exchange-rate.csv",
+     "원달러 일별 환율 전체 시계열 (FRED DEXKOUS · 뉴욕 정오 매입환율)",
+     "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DEXKOUS"),
+
+    # 가계부채 — BIS '가계 및 가계봉사 비영리단체 총신용(Adjusted for Breaks)', 분기말
+    ("korea-household-debt-total.csv",
+     "한국 가계부채 잔액 · 십억 원 (FRED CRDQKRAHABIS · BIS)",
+     "https://fred.stlouisfed.org/graph/fredgraph.csv?id=CRDQKRAHABIS"),
+
+    ("korea-household-debt-gdp.csv",
+     "한국 GDP 대비 가계부채 비율 · % (FRED QKRHAM770A · BIS)",
+     "https://fred.stlouisfed.org/graph/fredgraph.csv?id=QKRHAM770A"),
+
+    ("japan-household-debt-gdp.csv",
+     "일본 GDP 대비 가계부채 비율 · % (FRED QJPHAM770A · BIS, 한국과 같은 기준)",
+     "https://fred.stlouisfed.org/graph/fredgraph.csv?id=QJPHAM770A"),
+
+    # 자동차 등록대수 — 국토교통부 통계누리 '자동차등록대수현황_연도별'(hRsId=58, 양식 1244).
+    # 화면의 엑셀 버튼은 브라우저 안에서 파일을 만들므로, 화면이 표를 채울 때 부르는
+    # 조회 요청(columns.do · data.do)을 그대로 받는다. 한 번에 5년까지만 조회되고,
+    # 2000~2014년은 형식 561, 2015년부터는 형식 562 에만 값이 있다 (열 순서가 다르다).
+    # 열 이름은 columns 파일에 있다. 연도별 값은 12월 말 등록대수다
+    *[(f"korea-vehicle-registrations_columns_{st}.json",
+       f"자동차 등록대수 연도별 열 정의 · 형식 {st} (국토교통부 통계누리)",
+       f"https://stat.molit.go.kr/portal/stat/columns.do?formId=1244&styleNum={st}")
+      for st in (561, 562)],
+    *[(f"korea-vehicle-registrations_{st}_{a}_{a + 4}.json",
+       f"자동차 등록대수 연도별 {a}~{a + 4} · 대 (국토교통부 통계누리 · 형식 {st})",
+       "https://stat.molit.go.kr/portal/stat/data.do?formId=1244"
+       f"&styleNum={st}&apprYn=Y&startDate={a}&endDate={a + 4}")
+      for st, a in ((561, 2000), (561, 2005), (561, 2010), (562, 2015), (562, 2020))],
+
+    # 도로교통 — 사망률(OWID · WHO)과 사망자 수(OECD/ITF)는 출처 · 정의가 다른 별개 지표다
+    ("korea-road-death-rate.csv",
+     "도로교통사고 사망률 · 인구 10만 명당 전체 CSV (Our World in Data · WHO GHE)",
+     "https://ourworldindata.org/grapher/death-rate-from-road-accidents-ghe.csv"
+     "?v=1&csvType=full&useColumnShortNames=false"),
+
+    ("korea-road-fatalities.csv",
+     "한국 도로교통사고 사망자 수 · 명 (OECD/ITF SDMX DF_TRENDSSAFETY)",
+     "https://sdmx.oecd.org/public/rest/data/OECD.ITF,DSD_TRENDS@DF_TRENDSSAFETY,1.0/"
+     "KOR.A.FATALITIES....?format=csvfilewithlabels"),
 
     ("wb_countries.json",
      "World Bank 국가 목록 — 대륙·소득군 같은 집계치를 걸러내는 데 씁니다",

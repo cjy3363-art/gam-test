@@ -41,6 +41,17 @@ function errPct(q, mine) {
   if (q.type === "choice") return mine === q.answer ? 0 : 100;
   return Math.abs(mine - q.answer) / Math.abs(q.answer) * 100;
 }
+/* 택1 보기는 글자이거나 그림({ id, img, alt })이다. 글자는 글자 그대로, 그림은 id 로 채점한다.
+   그래서 보기 순서를 섞어도 정답은 자리(인덱스)가 아니라 id 를 따라간다 */
+const optId = (o) => (typeof o === "string" ? o : o.id);
+function shuffled(a) {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+}
 function gradeOf(s) {
   return INDEX.grades.find((g) => s >= g.min) || INDEX.grades.at(-1);
 }
@@ -73,7 +84,9 @@ function show(name) {
 /* ── 시작 ────────────────────────────────────────── */
 async function boot() {
   INDEX = await (await fetch("topics.json")).json();
-  $("title").textContent = INDEX.title;
+  // 제목 글자에 색을 입힐 때는 title_html 을 쓴다. 공유 문구는 그대로 title 을 쓴다
+  if (INDEX.title_html) $("title").innerHTML = INDEX.title_html;
+  else $("title").textContent = INDEX.title;
   $("subtitle").textContent = INDEX.subtitle;
 
   const p = new URLSearchParams(location.search);
@@ -90,6 +103,7 @@ async function boot() {
   $("btn-next").onclick = next;
   $("btn-back").onclick = () => show("home");
   $("btn-more").onclick = () => { renderGrid(); show("home"); };
+  $("btn-retry").onclick = () => start(PACK.id);
   $("btn-share").onclick = share;
   if (p.has("t")) {
     const t = INDEX.topics.find((x) => x.id === p.get("t"));
@@ -129,7 +143,11 @@ function renderQ() {
   const q = PACK.questions[idx];
   $("progress-bar").style.width = `${(idx / PACK.questions.length) * 100}%`;
   $("q-count").textContent = `${idx + 1} / ${PACK.questions.length}`;
-  $("q-text").textContent = q.text;
+  // 질문 끝의 "(단위: …)" 는 질문보다 작게, 질문 아래 오른쪽에 따로 보여 준다 (문항 데이터는 그대로)
+  const unit = q.text.match(/^(.*?)\s*\((단위:[^()]*)\)\s*$/);
+  $("q-text").textContent = unit ? unit[1] : q.text;
+  $("q-unit").textContent = unit ? `(${unit[2]})` : "";
+  $("q-unit").hidden = !unit;
   $("btn-next").textContent =
     idx === PACK.questions.length - 1 ? "결과 보기" : "다음";
 
@@ -141,14 +159,21 @@ function renderQ() {
     answers[idx] = null;
     $("btn-next").disabled = true;
     $("q-choice").innerHTML = "";
-    q.options.forEach((opt) => {
+    const opts = q.shuffle ? shuffled(q.options) : q.options;
+    $("q-choice").classList.toggle("img-choices", opts.some((o) => o.img));
+    opts.forEach((opt) => {
       const b = document.createElement("button");
       b.className = "choice";
       b.type = "button";
-      b.textContent = opt;
+      if (opt.img) {
+        b.classList.add("img");
+        b.innerHTML = `<img src="${opt.img}" alt="${opt.alt || ""}">`;
+      } else {
+        b.textContent = opt;
+      }
       b.setAttribute("aria-pressed", "false");
       b.onclick = () => {
-        answers[idx] = opt;
+        answers[idx] = optId(opt);
         [...$("q-choice").children].forEach((c) =>
           c.setAttribute("aria-pressed", String(c === b)));
         $("btn-next").disabled = false;
@@ -194,6 +219,12 @@ function renderResult() {
   $("score").innerHTML = `${total}<span>점</span>`;
   $("grade").textContent = g.name;
   $("grade-emoji").textContent = g.emoji || "";
+  // 문항마다 100점 만점을 평균 내므로 문항 수와 상관없이 만점은 100점이다
+  $("score-max").textContent = "100점 만점";
+  const hits = PACK.questions.filter((q, i) => q.type === "choice" && answers[i] === q.answer).length;
+  // 정답 · 오답 개수는 맞고 틀림이 분명한 택1 문항으로만 된 주제에서 보여 준다 (슬라이더 주제는 숨김)
+  $("result-counts").hidden = !PACK.questions.every((q) => q.type === "choice");
+  $("result-counts").textContent = `정답 ${hits}개 · 오답 ${PACK.questions.length - hits}개`;
 
   const box = $("cards");
   box.innerHTML = "";
@@ -222,12 +253,14 @@ function renderResult() {
 }
 
 function choiceBody(q, mine) {
-  const label = (o) => {
+  const label = (opt) => {
+    const o = optId(opt);
     const cls = o === q.answer && o === mine ? "both"
       : o === q.answer ? "real" : o === mine ? "mine" : "";
     const tag = o === q.answer && o === mine ? " 실제 · 내 답"
       : o === q.answer ? " 실제" : o === mine ? " 내 답" : "";
-    return `<span class="pill ${cls}">${o}${tag}</span>`;
+    const face = opt.img ? `<img src="${opt.img}" alt="${opt.alt || ""}">` : o;
+    return `<span class="pill ${cls}">${face}${tag}</span>`;
   };
   return `<div class="pills">${q.options.map(label).join("")}</div>`;
 }

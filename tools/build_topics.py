@@ -631,12 +631,75 @@ topic(
                "내가 사는 곳의 수준을 세계 평균으로 착각하기 쉽습니다."),
     ])
 
-# ── 11. 대한민국 출산율·기대수명 ─────────────────────────────────
+# ── 11. 한국에서 아이는 얼마나 태어날까? (출산율·인구 변화) ──────────
 # 계산은 korea_population.py 에 있다. 다른 원본이 없어도 이 주제만 따로
 # 만들 수 있게 떼어 두었다 (python tools/korea_population.py)
 from korea_population import korea_population  # noqa: E402
 
 TOPICS.append(korea_population(RAW))
+
+# ── 12. 한국인은 얼마나 일할까? (근로시간 변화) ───────────────────
+# 계산은 korea_working_hours.py 에 있다. 목록에서 '비는 언제, 얼마나'(seoul-rain)
+# 칸을 지우고 그 자리에 넣는다 (python tools/korea_working_hours.py)
+from korea_working_hours import REPLACES, korea_working_hours  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(REPLACES)] = korea_working_hours(RAW)
+
+# ── 13. 한국인은 얼마나 벌까? (소득 수준·경제 성장) ───────────────
+# 계산은 korea_economic_growth.py 에 있다. 목록에서 '미세먼지, 언제 나쁜가'
+# (seoul-air) 칸을 지우고 그 자리에 넣는다 (python tools/korea_economic_growth.py)
+import korea_economic_growth as keg  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(keg.REPLACES)] = keg.korea_economic_growth(RAW)
+
+# ── 14. 원달러 환율 26년 (FRED 일별 원·달러 환율) ─────────────────
+# 계산은 korea_exchange_rate.py 에 있다. 목록에서 '우리는 얼마나 일하나'
+# (working-hours) 칸을 지우고 그 자리에 넣는다 (python tools/korea_exchange_rate.py)
+import korea_exchange_rate as ker  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(ker.REPLACES)] = ker.korea_exchange_rate(RAW)
+
+# ── 15. 한국인은 얼마나 늙어갈까? (고령화·인구구조 변화) ──────────────
+# 계산은 korea_aging_population.py 에 있다. 목록에서 '인구와 출산'
+# (population) 칸을 지우고 그 자리에 넣는다 (python tools/korea_aging_population.py)
+import korea_aging_population as kap  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(kap.REPLACES)] = kap.korea_aging_population(RAW)
+
+# ── 16. 한국인은 빚을 얼마나 질까? (가계부채·대출 규모 변화) ───────────
+# 계산은 korea_household_debt.py 에 있다. 목록에서 '인터넷과 연결'
+# (internet) 칸을 지우고 그 자리에 넣는다 (python tools/korea_household_debt.py)
+import korea_household_debt as khd  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(khd.REPLACES)] = khd.korea_household_debt(RAW)
+
+# ── 17. 한국 물가는 얼마나 올랐을까? (소비자물가·화폐 구매력) ──────────
+# 계산은 korea_inflation.py 에 있다. 목록에서 1999년부터의 '원달러 환율 26년'
+# (usdkrw) 칸을 지우고 그 자리에 넣는다 (python tools/korea_inflation.py)
+import korea_inflation as kin  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(kin.REPLACES)] = kin.korea_inflation(RAW)
+
+# ── 18. 한국인은 고기를 얼마나 먹을까? (1인당 육류 공급량) ────────────
+# 계산은 korea_meat_supply.py 에 있다. 목록에서 '서울·도쿄·런던·싱가포르'
+# (cities) 칸을 지우고 그 자리에 넣는다 (python tools/korea_meat_supply.py)
+import korea_meat_supply as kms  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(kms.REPLACES)] = kms.korea_meat_supply(RAW)
+
+# ── 19. 한국의 자동차는 얼마나 늘었을까? (자동차 등록·도로교통) ─────────
+# 계산은 korea_vehicle_road_safety.py 에 있다. 목록에서 '지진은 얼마나 자주'
+# (quakes) 칸을 지우고 그 자리에 넣는다 (python tools/korea_vehicle_road_safety.py)
+import korea_vehicle_road_safety as kvr  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(kvr.REPLACES)] = kvr.korea_vehicle_road_safety(RAW)
+
+# ── 20. 한국은 탄소를 얼마나 배출할까? (CO₂ 배출·재생에너지 발전) ──────
+# 계산은 korea_carbon_energy.py 에 있다. 목록에서 '얼마나 오래 사나'
+# (life) 칸을 지우고 그 자리에 넣는다 (python tools/korea_carbon_energy.py)
+import korea_carbon_energy as kce  # noqa: E402
+
+TOPICS[[t["id"] for t in TOPICS].index(kce.REPLACES)] = kce.korea_carbon_energy(RAW)
 
 
 # ════════════════════════════════════════════════════════════════
