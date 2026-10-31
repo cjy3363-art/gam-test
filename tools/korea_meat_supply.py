@@ -113,11 +113,6 @@ def korea_meat_supply(raw: Path = RAW) -> dict:
         return sorted([answer, *decoys])
 
     # 수치 문항의 오답은 정답에서 일정 간격씩 떨어진 정수 중에서 뽑는다
-    near = lambda a, step: [a + step * k for k in range(-3, 4) if a + step * k > 0]
-    m1_opts = with_decoys("m1", gain, near(gain, 8))
-    m2_opts = with_decoys("m2", pig_n, near(pig_n, 6))
-    m3_opts = with_decoys("m3", beef_n, near(beef_n, 4))
-    m4_opts = with_decoys("m4", poultry_n, near(poultry_n, 5))
     m5_opts = with_decoys("m5", top_y, meat)
 
     def choice(qid, text, options, answer, basis, why):
@@ -126,32 +121,38 @@ def korea_meat_supply(raw: Path = RAW) -> dict:
         return {"id": qid, "type": "choice", "text": text, "options": options,
                 "answer": answer, "basis": basis, "why": why}
 
+    def slider(qid, text, answer, unit, lo, hi, basis, why):
+        """숫자를 직접 맞히는 문항. 시작 위치는 범위의 맨 왼쪽 — 가운데에 두면 정답 근처에서 시작할 수 있다"""
+        assert lo <= answer <= hi, f"{qid}: 정답 {answer}이(가) 슬라이더 범위 {lo}~{hi} 밖입니다"
+        return {"id": qid, "type": "slider", "text": text, "unit": unit, "min": lo, "max": hi,
+                "step": 1, "start": lo, "answer": answer, "basis": basis, "why": why}
+
     kg = lambda v: f"{v}kg"
     yr = lambda v: f"{v}년"
     OWID = "OWID · FAO 식품수급표"
 
-    def of_year(what, col, n, qid, opts, note=""):
-        return choice(
+    def of_year(what, col, n, qid, note=""):
+        return slider(
             qid, f"{END}년 대한민국의 1인당 연간 {what} 공급량은 약 몇 kg이었을까요? "
             "(단위: kg/인/년, 정수)",
-            [kg(v) for v in opts], kg(n),
+            n, "kg", 0, 80,
             f"{OWID} 종류별 육류 공급량 CSV의 '{col}' 열(kg/인/년)에서 대한민국(KOR) {END}년 "
             "값을 그대로 읽어 소수 첫째 자리에서 반올림했다.",
             f"원본에 적힌 {END}년 대한민국의 1인당 {what} 공급량을 정수로 반올림하면 약 {kg(n)}입니다. "
             f"시장에 나온 양을 인구로 나눈 공급량이며, 한 사람이 실제로 먹은 양과는 다릅니다.{note}")
 
     questions = [
-        choice("m1", f"{START}년 대비 {END}년 대한민국의 1인당 연간 전체 육류 공급량은 약 몇 kg "
+        slider("m1", f"{START}년 대비 {END}년 대한민국의 1인당 연간 전체 육류 공급량은 약 몇 kg "
                "증가했을까요? (단위: kg/인/년, 정수)",
-               [kg(v) for v in m1_opts], kg(gain),
+               gain, "kg", 0, 80,
                f"{OWID} 전체 육류 공급량 CSV의 '{MEAT}' 열(kg/인/년) 기준으로 대한민국(KOR)의 "
                f"{END}년 값 − {START}년 값을 반올림 없이 계산한 뒤 소수 첫째 자리에서 반올림했다.",
                f"대한민국의 1인당 전체 육류 공급량은 {START}년 약 {kg(whole(m0))}에서 {END}년 약 "
                f"{kg(whole(m1))}으로 약 {kg(gain)} 늘었습니다. 실제 섭취량이 아니라 공급량이며, "
                "2009년까지는 FAO 구 방법론, 2010년부터는 신 방법론 값입니다."),
-        of_year("돼지고기", PIG, pig_n, "m2", m2_opts),
-        of_year("소·물소고기", BEEF, beef_n, "m3", m3_opts, " 물소고기도 포함한 값입니다."),
-        of_year("가금육", POULTRY, poultry_n, "m4", m4_opts, " 닭고기만이 아니라 가금류 고기 전체입니다."),
+        of_year("돼지고기", PIG, pig_n, "m2"),
+        of_year("소·물소고기", BEEF, beef_n, "m3", " 물소고기도 포함한 값입니다."),
+        of_year("가금육", POULTRY, poultry_n, "m4", " 닭고기만이 아니라 가금류 고기 전체입니다."),
         choice("m5", f"{START}~{END}년 중 대한민국의 1인당 연간 전체 육류 공급량이 가장 많았던 해는 "
                "언제일까요? (단위: 연도)",
                [yr(v) for v in m5_opts], yr(top_y),

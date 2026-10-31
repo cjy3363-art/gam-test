@@ -94,28 +94,32 @@ def korea_working_hours(raw: Path = RAW) -> dict:
         return sorted([answer, *decoys])
 
     # 수치 문항의 오답은 정답에서 일정 간격씩 떨어진 값 중에서 뽑는다
-    w1_opts = with_decoys("w1", drop, [half_up(drop + 150 * k, 0) for k in range(-3, 4)
-                                       if drop + 150 * k > 0])
     w2_opts = with_decoys("w2", top_y, kor)
-    w3_opts = with_decoys("w3", gap, [half_up(gap + 100 * k, 0) for k in range(-3, 4)
-                                      if gap + 100 * k > 0])
     w4_opts = with_decoys("w4", cut_y, diff)
-    w5_opts = with_decoys("w5", short, NAMES)        # 5개국 중 정답 포함 4개국
+    # 5번은 질문에 적은 다섯 나라를 모두, 질문과 같은 순서로 보기로 쓴다 (이 문항만 5지선다)
+    w5_opts = list(NAMES)
 
     def choice(qid, text, options, answer, basis, why):
         assert answer in options, f"{qid}: 정답이 선택지에 없습니다"
-        assert len(set(options)) == 4, f"{qid}: 보기가 4개가 아니거나 겹칩니다"
+        want = len(NAMES) if qid == "w5" else 4
+        assert len(set(options)) == len(options) == want, f"{qid}: 보기가 {want}개가 아니거나 겹칩니다"
         return {"id": qid, "type": "choice", "text": text, "options": options,
                 "answer": answer, "basis": basis, "why": why}
+
+    def slider(qid, text, answer, unit, lo, hi, basis, why):
+        """숫자를 직접 맞히는 문항. 시작 위치는 범위의 맨 왼쪽 — 가운데에 두면 정답 근처에서 시작할 수 있다"""
+        assert lo <= answer <= hi, f"{qid}: 정답 {answer}이(가) 슬라이더 범위 {lo}~{hi} 밖입니다"
+        return {"id": qid, "type": "slider", "text": text, "unit": unit, "min": lo, "max": hi,
+                "step": 1, "start": lo, "answer": answer, "basis": basis, "why": why}
 
     hr = lambda v: f"{v:,.0f}시간"
     yr = lambda v: f"{v}년"
     rank = sorted(last, key=last.get)
 
     questions = [
-        choice("w1", f"{START}년 대비 {END}년 대한민국의 연간 평균 근로시간은 몇 시간 감소했을까요? "
+        slider("w1", f"{START}년 대비 {END}년 대한민국의 연간 평균 근로시간은 몇 시간 감소했을까요? "
                "(단위: 시간, 정수)",
-               [hr(v) for v in w1_opts], hr(drop),
+               int(drop), "시간", 0, 1500,
                f"OWID 취업자 1인당 연간 근로시간 기준으로 대한민국의 {START}년 값 − {END}년 값"
                f" = {k0:,.2f} − {k1:,.2f}을 계산해 소수 첫째 자리에서 반올림해 정수로 나타냈다.",
                f"대한민국의 연간 근로시간은 {START}년 {k0:,.2f}시간에서 {END}년 {k1:,.2f}시간으로 "
@@ -127,9 +131,9 @@ def korea_working_hours(raw: Path = RAW) -> dict:
                f"{len(kor)}개 연도에서 최댓값({kor[top_y]:,.2f}시간)에 해당하는 해를 찾았다.",
                f"{top_y}년 {kor[top_y]:,.2f}시간이 {len(kor)}개 연도 중 가장 길었고, "
                f"{END}년은 {k1:,.2f}시간이었습니다."),
-        choice("w3", f"{END}년 대한민국과 일본의 연간 평균 근로시간 차이는 몇 시간일까요? "
+        slider("w3", f"{END}년 대한민국과 일본의 연간 평균 근로시간 차이는 몇 시간일까요? "
                "(단위: 시간, 절댓값, 정수)",
-               [hr(v) for v in w3_opts], hr(gap),
+               int(gap), "시간", 0, 800,
                f"OWID 취업자 1인당 연간 근로시간 기준으로 {END}년 |대한민국 값 − 일본 값|"
                f" = |{k1:,.2f} − {j1:,.2f}|을 계산해 소수 첫째 자리에서 반올림해 정수로 나타냈다.",
                f"{END}년 연간 근로시간은 대한민국 {k1:,.2f}시간, 일본 {j1:,.2f}시간으로 "

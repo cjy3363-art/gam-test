@@ -128,10 +128,8 @@ def korea_inflation(raw: Path = RAW) -> dict:
         return sorted([answer, *decoys])
 
     # 수치 문항의 오답은 정답에서 일정 간격씩 떨어진 정수 중에서 뽑는다
-    p1_opts = with_decoys("p1", cum, [cum + 20 * k for k in range(-3, 4) if cum + 20 * k > 0])
     p2_opts = with_decoys("p2", cum10, [cum10 + 10 * k for k in range(-3, 4) if cum10 + 10 * k > 0])
     p3_opts = with_decoys("p3", top_y, inf)
-    p4_opts = with_decoys("p4", worth, [worth + 2 * k for k in range(-3, 4) if worth + 2 * k > TEN])
 
     def choice(qid, text, options, answer, basis, why):
         assert answer in options, f"{qid}: 정답이 선택지에 없습니다"
@@ -139,15 +137,21 @@ def korea_inflation(raw: Path = RAW) -> dict:
         return {"id": qid, "type": "choice", "text": text, "options": options,
                 "answer": answer, "basis": basis, "why": why}
 
+    def slider(qid, text, answer, unit, lo, hi, basis, why):
+        """숫자를 직접 맞히는 문항. 시작 위치는 범위의 맨 왼쪽 — 가운데에 두면 정답 근처에서 시작할 수 있다"""
+        assert lo <= answer <= hi, f"{qid}: 정답 {answer}이(가) 슬라이더 범위 {lo}~{hi} 밖입니다"
+        return {"id": qid, "type": "slider", "text": text, "unit": unit, "min": lo, "max": hi,
+                "step": 1, "start": lo, "answer": answer, "basis": basis, "why": why}
+
     pct = lambda v: f"{v}%"
     yr = lambda v: f"{v}년"
     man = lambda v: f"{v}만 원"
     WB = "World Bank WDI"
 
     questions = [
-        choice("p1", f"{START}년부터 {END}년까지 대한민국의 소비자물가는 누적 약 몇 % 상승했을까요? "
+        slider("p1", f"{START}년부터 {END}년까지 대한민국의 소비자물가는 누적 약 몇 % 상승했을까요? "
                "(단위: %, 정수)",
-               [pct(v) for v in p1_opts], pct(cum),
+               cum, "%", 0, 200,
                f"{WB} 소비자물가지수({CPI}, 2010 = 100) 기준으로 대한민국의 ({END}년 CPI ÷ {START}년 "
                "CPI − 1) × 100을 반올림 없이 계산한 뒤 소수 첫째 자리에서 반올림했다.",
                f"{START}년과 {END}년 대한민국 소비자물가지수의 비율로 계산하면 {END}년 물가는 "
@@ -167,9 +171,9 @@ def korea_inflation(raw: Path = RAW) -> dict:
                f"{len(inf)}개 연도의 원본 값을 반올림 없이 비교해 최댓값을 기록한 해를 찾았다.",
                f"World Bank 연간 상승률 원본 값으로 비교하면 {top_y}년 약 {whole(inf[top_y])}%가 "
                f"{len(inf)}개 연도 중 가장 높았고, {END}년은 약 {whole(k1)}%였습니다."),
-        choice("p4", f"2004년의 {TEN}만 원은 {END}년 소비자물가 기준으로 약 몇만 원에 해당할까요? "
+        slider("p4", f"2004년의 {TEN}만 원은 {END}년 소비자물가 기준으로 약 몇만 원에 해당할까요? "
                "(단위: 만 원, 정수)",
-               [man(v) for v in p4_opts], man(worth),
+               worth, "만 원", 10, 40,
                f"{WB} 소비자물가지수({CPI}, 2010 = 100) 기준으로 대한민국의 {TEN}만 원 × ({END}년 CPI "
                "÷ 2004년 CPI)를 반올림 없이 계산한 뒤 만 원 단위 정수로 반올림했다.",
                f"2004년과 {END}년 대한민국 소비자물가지수의 비율을 곱하면 2004년 {TEN}만 원과 같은 "

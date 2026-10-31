@@ -101,10 +101,6 @@ def korea_economic_growth(raw: Path = RAW) -> dict:
     e1_opts = with_decoys("e1", times, [half_up(times + k, 0) for k in range(-3, 4)
                                         if times + k > 1])
     e2_opts = with_decoys("e2", top_y, grow)         # 1990~2023 중 값이 있는 해
-    e3_opts = with_decoys("e3", rise, [half_up(rise + 75 * k, 0) for k in range(-3, 4)
-                                       if rise + 75 * k > 0])
-    e4_opts = with_decoys("e4", gap, [half_up(gap + 2000 * k, 0) for k in range(-3, 4)
-                                      if gap + 2000 * k > 0])
     e5_opts = with_decoys("e5", len(neg), range(0, 8))
 
     def choice(qid, text, options, answer, basis, why):
@@ -112,6 +108,12 @@ def korea_economic_growth(raw: Path = RAW) -> dict:
         assert len(set(options)) == 4, f"{qid}: 보기가 4개가 아니거나 겹칩니다"
         return {"id": qid, "type": "choice", "text": text, "options": options,
                 "answer": answer, "basis": basis, "why": why}
+
+    def slider(qid, text, answer, unit, lo, hi, basis, why):
+        """숫자를 직접 맞히는 문항. 시작 위치는 범위의 맨 왼쪽 — 가운데에 두면 정답 근처에서 시작할 수 있다"""
+        assert lo <= answer <= hi, f"{qid}: 정답 {answer}이(가) 슬라이더 범위 {lo}~{hi} 밖입니다"
+        return {"id": qid, "type": "slider", "text": text, "unit": unit, "min": lo, "max": hi,
+                "step": 1, "start": lo, "answer": answer, "basis": basis, "why": why}
 
     bae = lambda v: f"{v:.0f}배"
     pct = lambda v: f"{v:,.0f}%"
@@ -134,17 +136,17 @@ def korea_economic_growth(raw: Path = RAW) -> dict:
                f"{len(grow)}개 연도에서 최댓값({grow[top_y]:.2f}%)에 해당하는 해를 찾았다.",
                f"{top_y}년 경제성장률 {grow[top_y]:.2f}%가 {len(grow)}개 연도 중 가장 높았고, "
                f"{END}년은 {grow[END]:.2f}%였습니다."),
-        choice("e3", f"{START}년 대비 {END}년 대한민국의 실질 1인당 GDP는 몇 % 증가했을까요? "
+        slider("e3", f"{START}년 대비 {END}년 대한민국의 실질 1인당 GDP는 몇 % 증가했을까요? "
                "(단위: %, 정수)",
-               [pct(v) for v in e3_opts], pct(rise),
+               int(rise), "%", 0, 600,
                f"World Bank 실질 1인당 GDP(불변가격 US$) 기준으로 대한민국의 ({END}년 값 − {START}년 값)"
                f" ÷ {START}년 값 × 100 = ({r1:,.2f} − {r0:,.2f}) ÷ {r0:,.2f} × 100을 계산해 "
                f"소수 첫째 자리에서 반올림해 정수로 나타냈다.",
                f"물가 변동을 뺀 실질 1인당 GDP는 {START}년 {r0:,.2f}달러에서 {END}년 {r1:,.2f}달러로 "
                f"{pct(rise)} 늘었습니다. 같은 기간 명목 값은 {bae(times)}가 되었습니다."),
-        choice("e4", f"{END}년 대한민국과 일본의 1인당 명목 GNI 차이는 얼마일까요? "
+        slider("e4", f"{END}년 대한민국과 일본의 1인당 명목 GNI 차이는 얼마일까요? "
                "(단위: 미국 달러, 절댓값, 정수)",
-               [usd(v) for v in e4_opts], usd(gap),
+               int(gap), "달러", 0, 10000,
                f"World Bank 1인당 명목 GNI(현재 US$) 기준으로 {END}년 |대한민국 값 − 일본 값|"
                f" = |{nk:,.0f} − {nj:,.0f}|을 계산해 소수 첫째 자리에서 반올림해 정수로 나타냈다.",
                f"{END}년 1인당 명목 GNI는 대한민국 {nk:,.0f}달러, 일본 {nj:,.0f}달러로 "

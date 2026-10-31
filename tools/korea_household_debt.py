@@ -109,9 +109,7 @@ def korea_household_debt(raw: Path = RAW) -> dict:
 
     # 수치 문항의 오답은 정답에서 일정 간격씩 떨어진 정수 중에서 뽑는다
     d1_opts = with_decoys("d1", times, [times + 2 * k for k in range(-3, 4) if times + 2 * k > 1])
-    d2_opts = with_decoys("d2", added, [added + 300 * k for k in range(-3, 4) if added + 300 * k > 0])
     d3_opts = with_decoys("d3", top_y, kor)
-    d4_opts = with_decoys("d4", gap, [gap + 5 * k for k in range(-3, 4) if gap + 5 * k > 0])
     d5_opts = with_decoys("d5", signed, [signed + 10 * k for k in range(-5, 4) if signed + 10 * k != 0])
 
     def choice(qid, text, options, answer, basis, why):
@@ -119,6 +117,12 @@ def korea_household_debt(raw: Path = RAW) -> dict:
         assert len(set(options)) == 4, f"{qid}: 보기가 4개가 아니거나 겹칩니다"
         return {"id": qid, "type": "choice", "text": text, "options": options,
                 "answer": answer, "basis": basis, "why": why}
+
+    def slider(qid, text, answer, unit, lo, hi, basis, why):
+        """숫자를 직접 맞히는 문항. 시작 위치는 범위의 맨 왼쪽 — 가운데에 두면 정답 근처에서 시작할 수 있다"""
+        assert lo <= answer <= hi, f"{qid}: 정답 {answer}이(가) 슬라이더 범위 {lo}~{hi} 밖입니다"
+        return {"id": qid, "type": "slider", "text": text, "unit": unit, "min": lo, "max": hi,
+                "step": 1, "start": lo, "answer": answer, "basis": basis, "why": why}
 
     jo = lambda v: f"{v:,}조 원"
     pp = lambda v: f"{v}%p"
@@ -137,9 +141,9 @@ def korea_household_debt(raw: Path = RAW) -> dict:
                f"대한민국 가계부채 잔액은 {START}년 4분기 말 약 {whole(t0 / 1000):,}조 원에서 {END}년 "
                f"4분기 말 약 {whole(t1 / 1000):,}조 원으로 약 {times}배가 되었습니다. 1인당 빚이 아니라 "
                "가계 전체의 부채 잔액입니다."),
-        choice("d2", f"{START}년 대비 {END}년 대한민국의 가계부채 총액은 약 몇 조 원 증가했을까요? "
+        slider("d2", f"{START}년 대비 {END}년 대한민국의 가계부채 총액은 약 몇 조 원 증가했을까요? "
                "(단위: 조 원, 정수)",
-               [jo(v) for v in d2_opts], jo(added),
+               added, "조 원", 0, 3000,
                f"FRED {TOTAL[1]}({BIS}, 십억 원) 기준으로 대한민국의 {END}년 4분기 말 잔액 − "
                f"{START}년 4분기 말 잔액을 계산하고 1,000으로 나눠 조 원으로 바꾼 뒤 소수 첫째 자리에서 "
                "반올림했다.",
@@ -152,9 +156,9 @@ def korea_household_debt(raw: Path = RAW) -> dict:
                f"4분기 말 값({len(kor)}개)을 반올림 없이 비교해 최댓값을 기록한 해를 찾았다.",
                f"{top_y}년 4분기 말 GDP 대비 가계부채 비율 약 {whole(kor[top_y])}%가 {len(kor)}개 연도 "
                f"중 가장 높았고, {END}년 4분기 말은 약 {whole(k1)}%였습니다."),
-        choice("d4", f"{END}년 대한민국과 일본의 GDP 대비 가계부채 비율은 약 몇 %p 차이가 났을까요? "
+        slider("d4", f"{END}년 대한민국과 일본의 GDP 대비 가계부채 비율은 약 몇 %p 차이가 났을까요? "
                "(단위: %p, 정수)",
-               [pp(v) for v in d4_opts], pp(gap),
+               gap, "%p", 0, 60,
                f"FRED {KOR[1]} · {JPN[1]}(같은 {BIS} 기준, GDP 대비 %)로 같은 {END}년 4분기 말의 "
                "|대한민국 값 − 일본 값|을 반올림 없이 계산한 뒤 소수 첫째 자리에서 반올림해 정수 %p로 "
                "나타냈다.",

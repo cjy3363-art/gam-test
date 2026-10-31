@@ -96,8 +96,6 @@ def korea_population(raw: Path = RAW) -> dict:
         return sorted([answer, *decoys])
 
     # 수치 문항의 오답은 정답에서 일정 간격씩 떨어진 값 중에서 뽑는다
-    k1_opts = with_decoys("k1", drop, [half_up(drop + 10 * k, 0) for k in range(-3, 4)
-                                       if 0 < drop + 10 * k < 100])
     k2_opts = with_decoys("k2", low_y, fert)
     k3_opts = with_decoys("k3", gap, [half_up(gap + 2 * k, 0) for k in range(-3, 4)
                                       if gap + 2 * k > 0])
@@ -110,15 +108,21 @@ def korea_population(raw: Path = RAW) -> dict:
         return {"id": qid, "type": "choice", "text": text, "options": options,
                 "answer": answer, "basis": basis, "why": why}
 
+    def slider(qid, text, answer, unit, lo, hi, basis, why):
+        """숫자를 직접 맞히는 문항. 시작 위치는 범위의 맨 왼쪽 — 가운데에 두면 정답 근처에서 시작할 수 있다"""
+        assert lo <= answer <= hi, f"{qid}: 정답 {answer}이(가) 슬라이더 범위 {lo}~{hi} 밖입니다"
+        return {"id": qid, "type": "slider", "text": text, "unit": unit, "min": lo, "max": hi,
+                "step": 1, "start": lo, "answer": answer, "basis": basis, "why": why}
+
     pct = lambda v: f"{v:.0f}%"
     per = lambda v: f"{v:.0f}명"
     yr = lambda v: f"{v}년"
     p_below = pop[top_y] - pop[END]
 
     questions = [
-        choice("k1", f"{START}년 대비 {END}년 대한민국의 합계출산율은 몇 % 감소했을까요? "
+        slider("k1", f"{START}년 대비 {END}년 대한민국의 합계출산율은 몇 % 감소했을까요? "
                "(단위: %, 정수)",
-               [pct(v) for v in k1_opts], pct(drop),
+               int(drop), "%", 0, 100,
                f"{START}·{END}년 대한민국 합계출산율로 ({START}년 값 − {END}년 값) ÷ {START}년 값 × 100"
                f" = ({f0:.3f} − {f1:.3f}) ÷ {f0:.3f} × 100을 계산해 소수 첫째 자리에서 반올림해 정수로 나타냈다.",
                f"합계출산율은 {START}년 {f0:.3f}명에서 {END}년 {f1:.3f}명으로 "

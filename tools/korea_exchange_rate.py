@@ -107,14 +107,18 @@ def korea_exchange_rate(raw: Path = RAW) -> dict:
     # 날짜 오답은 다른 해의 연중 최고 환율 날짜 — 모두 원본에 값이 있는 날이다
     x3_opts = with_decoys("x3", top_d, [d for y in avg for d, v in by[y].items() if v == hi[y]])
     x4_opts = with_decoys("x4", wide_y, rng)
-    x5_opts = with_decoys("x5", last_rng, [half_up(last_rng + 75 * k, 0) for k in range(-3, 4)
-                                           if last_rng + 75 * k > 0])
 
     def choice(qid, text, options, answer, basis, why):
         assert answer in options, f"{qid}: 정답이 선택지에 없습니다"
         assert len(set(options)) == 4, f"{qid}: 보기가 4개가 아니거나 겹칩니다"
         return {"id": qid, "type": "choice", "text": text, "options": options,
                 "answer": answer, "basis": basis, "why": why}
+
+    def slider(qid, text, answer, unit, lo, hi, basis, why):
+        """숫자를 직접 맞히는 문항. 시작 위치는 범위의 맨 왼쪽 — 가운데에 두면 정답 근처에서 시작할 수 있다"""
+        assert lo <= answer <= hi, f"{qid}: 정답 {answer}이(가) 슬라이더 범위 {lo}~{hi} 밖입니다"
+        return {"id": qid, "type": "slider", "text": text, "unit": unit, "min": lo, "max": hi,
+                "step": 1, "start": lo, "answer": answer, "basis": basis, "why": why}
 
     updown = lambda v: f"{abs(v):,.0f}원 {'상승' if v > 0 else '하락'}"
     won = lambda v: f"{v:,.0f}원"
@@ -156,9 +160,9 @@ def korea_exchange_rate(raw: Path = RAW) -> dict:
                f"{wide_y}년은 최저 {lo[wide_y]:,.2f}원({lo_day(wide_y)})에서 최고 "
                f"{hi[wide_y]:,.2f}원({hi_day(wide_y)})까지 {rng[wide_y]:,.2f}원 움직여, "
                f"{len(rng)}개 연도 중 변동 폭이 가장 컸습니다."),
-        choice("x5", f"{END}년 원·달러 환율의 연중 최고와 최저 차이는 몇 원이었을까요? "
+        slider("x5", f"{END}년 원·달러 환율의 연중 최고와 최저 차이는 몇 원이었을까요? "
                "(단위: 원/달러, 정수)",
-               [won(v) for v in x5_opts], won(last_rng),
+               int(last_rng), "원", 0, 500,
                f"{BASE} {END}년 유효 관측값 {n(END)}개의 최고 환율 − 최저 환율"
                f" = {hi[END]:,.2f} − {lo[END]:,.2f}의 차이를 계산해 소수 첫째 자리에서 반올림해 정수로 나타냈다.",
                f"{END}년 환율은 최저 {lo[END]:,.2f}원({lo_day(END)}), 최고 {hi[END]:,.2f}원"

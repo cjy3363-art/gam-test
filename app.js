@@ -139,7 +139,7 @@ function renderGrid() {
   // 등급 버튼 — 위에서 센 '푼 주제 수(n)'를 그대로 쓴다
   const left = Math.max(0, GRADE_MIN_TOPICS - n);
   $("btn-grade").disabled = left > 0;
-  $("grade-need").textContent = left > 0 ? `등급 확인까지 ${left}개 남았어요` : "";
+  $("grade-need").textContent = left > 0 ? `등급을 확인하려면 ${GRADE_MIN_TOPICS}개 이상의 퀴즈를 풀어야 해요` : "";
 }
 
 /* ── 나의 대한민국 등급 ───────────────────────────
@@ -216,8 +216,9 @@ function renderQ() {
   } else {
     const s = $("slider");
     s.min = q.min; s.max = q.max; s.step = q.step;
-    // 기본값을 한가운데에서 한 칸 비켜 둔다 — 가운데면 생각 없이 맞는다
-    s.value = Math.round(((q.min + q.max) / 2 + q.step) / q.step) * q.step;
+    // 문항에 시작 위치(start)가 있으면 거기서 시작한다.
+    // 없으면 한가운데에서 한 칸 비켜 둔다 — 가운데면 생각 없이 맞는다
+    s.value = q.start ?? Math.round(((q.min + q.max) / 2 + q.step) / q.step) * q.step;
     $("slider-min").textContent = `${q.min}${q.unit}`;
     $("slider-max").textContent = `${q.max}${q.unit}`;
     const paint = () => {

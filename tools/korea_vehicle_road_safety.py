@@ -145,8 +145,6 @@ def korea_vehicle_road_safety(raw: Path = RAW) -> dict:
         return sorted([answer, *decoys])
 
     near = lambda a, step, lo=0: [a + step * k for k in range(-3, 4) if a + step * k > lo]
-    v1_opts = with_decoys("v1", added, near(added, 300))
-    v2_opts = with_decoys("v2", share, [v for v in near(share, 6) if v < 100])
     v3_opts = with_decoys("v3", top_y, total)
     v4_opts = with_decoys("v4", times, near(times, 1, 1))
     v5_opts = with_decoys("v5", drop, near(drop, 4))
@@ -157,23 +155,29 @@ def korea_vehicle_road_safety(raw: Path = RAW) -> dict:
         return {"id": qid, "type": "choice", "text": text, "options": options,
                 "answer": answer, "basis": basis, "why": why}
 
+    def slider(qid, text, answer, unit, lo, hi, basis, why):
+        """숫자를 직접 맞히는 문항. 시작 위치는 범위의 맨 왼쪽 — 가운데에 두면 정답 근처에서 시작할 수 있다"""
+        assert lo <= answer <= hi, f"{qid}: 정답 {answer}이(가) 슬라이더 범위 {lo}~{hi} 밖입니다"
+        return {"id": qid, "type": "slider", "text": text, "unit": unit, "min": lo, "max": hi,
+                "step": 1, "start": lo, "answer": answer, "basis": basis, "why": why}
+
     man = lambda v: f"{v:,}만 대"
     yr = lambda v: f"{v}년"
     MOLIT = "국토교통부 자동차등록대수현황_연도별(12월 말 등록대수, 대)"
     WHO = "OWID · WHO 세계보건추정치 도로교통사고 사망률(인구 10만 명당)"
 
     questions = [
-        choice("v1", f"{START}년 대비 {END}년 대한민국의 자동차 전체 등록 대수는 약 몇 만 대 "
+        slider("v1", f"{START}년 대비 {END}년 대한민국의 자동차 전체 등록 대수는 약 몇 만 대 "
                "증가했을까요? (단위: 만 대, 정수)",
-               [man(v) for v in v1_opts], man(added),
+               added, "만 대", 0, 3000,
                f"{MOLIT} 기준으로 전국 총계(승용 · 승합 · 화물 · 특수 포함)의 ({END}년 값 − {START}년 값)"
                " ÷ 10,000을 반올림 없이 계산한 뒤 소수 첫째 자리에서 반올림했다.",
                f"전국 자동차 등록대수는 {START}년 {t0:,}대, {END}년 {t1:,}대로 차이 {t1 - t0:,}대를 "
                f"만 대로 나타내면 약 {man(added)}입니다. 등록된 차량 수이며 소유자 수나 실제 운행 차량 "
                "수가 아닙니다."),
-        choice("v2", f"{END}년 대한민국의 전체 등록 자동차 중 승용차가 차지하는 비중은 약 몇 %였을까요? "
+        slider("v2", f"{END}년 대한민국의 전체 등록 자동차 중 승용차가 차지하는 비중은 약 몇 %였을까요? "
                "(단위: %, 정수)",
-               [f"{v}%" for v in v2_opts], f"{share}%",
+               share, "%", 0, 100,
                f"{MOLIT} 기준으로 {END}년 (승용 계 ÷ 전국 총계) × 100을 반올림 없이 계산한 뒤 소수 첫째 "
                "자리에서 반올림했다.",
                f"{END}년 승용차 {c1:,}대 ÷ 전체 {t1:,}대 × 100 = 약 {share}%입니다. 등록 자동차 가운데 "
