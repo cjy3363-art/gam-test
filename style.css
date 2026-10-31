@@ -187,6 +187,33 @@ h1 {
   .tcard:not(:first-child) .tscore { grid-column: 1 / -1; }
 }
 
+/* ── 나의 대한민국 등급 버튼 · 화면 ───────────── */
+.grade-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin: 4px 0 18px; padding: 18px 16px;
+  background: var(--yellow); color: var(--ink); border: var(--border); box-shadow: var(--shadow);
+  font-size: 18px; font-weight: 900; text-align: center;
+}
+.grade-btn:not(:disabled):active { transform: translate(4px, 4px); box-shadow: var(--shadow-press); }
+.grade-btn:disabled { background: var(--paper); color: var(--off); border-color: var(--off); box-shadow: none; cursor: default; }
+.grade-need { font-size: 13px; font-weight: 700; color: var(--muted); }
+.grade-need:empty { display: none; }
+@media (hover: hover) {
+  .grade-btn:not(:disabled):hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-hover); }
+}
+.grade-letter {
+  display: inline-block; min-width: 72px; padding: 4px 14px;
+  background: var(--ink); color: var(--yellow); font-size: 44px; font-weight: 900; line-height: 1.1;
+}
+.grade-desc { font-size: 14px; color: var(--ink); margin: 8px 0 0; word-break: keep-all; }
+.grade-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.grade-list li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 8px 0; border-top: 2px dashed var(--ink); font-size: 14px; word-break: keep-all;
+}
+.grade-list li:first-child { border-top: 0; }
+.grade-list b { color: var(--score); font-weight: 900; white-space: nowrap; }
+
 /* ── 문항 ─────────────────────────────────────── */
 #topic-name { font-size: 13px; font-weight: 800; color: var(--ink); margin: 4px 0 10px; }
 .progress { height: 14px; background: var(--paper); border: var(--border); overflow: hidden; }

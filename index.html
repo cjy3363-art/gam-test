@@ -26,6 +26,8 @@
     </div>
     <p id="progress-note" class="fineprint" style="text-align:left"></p>
     <div id="topic-grid" class="grid"></div>
+    <button id="btn-grade" class="grade-btn" disabled>🏅 나의 대한민국 등급 확인하기
+      <span id="grade-need" class="grade-need"></span></button>
     <p class="fineprint">모든 숫자는 공개 데이터에서 직접 계산했습니다.<br>
       정답 옆의 <b>근거 보기</b>를 누르면 어떻게 셌는지 나옵니다.</p>
   </section>
@@ -48,6 +50,22 @@
     </div>
 
     <button id="btn-next" class="primary" disabled>다음</button>
+  </section>
+
+  <!-- 나의 대한민국 등급 ───────────────────────── -->
+  <section id="view-grade" class="view" hidden>
+    <button id="btn-grade-back" class="linkish">← 주제 고르기</button>
+    <div class="score-card">
+      <div id="kgrade-letter" class="grade-letter"></div>
+      <div id="kgrade-score" class="score"></div>
+      <div id="kgrade-basis" class="score-max"></div>
+      <div id="kgrade-name" class="grade"></div>
+      <p id="kgrade-desc" class="grade-desc"></p>
+    </div>
+    <div class="card">
+      <h3>주제별 점수</h3>
+      <ul id="kgrade-list" class="grade-list"></ul>
+    </div>
   </section>
 
   <!-- 결과 ───────────────────────────────────── -->

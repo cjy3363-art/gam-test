@@ -5,7 +5,12 @@
  */
 
 const $ = (id) => document.getElementById(id);
-const views = { home: $("view-home"), quiz: $("view-quiz"), result: $("view-result") };
+const views = { home: $("view-home"), quiz: $("view-quiz"), result: $("view-result"), grade: $("view-grade") };
+
+// 주제 점수는 문항마다 100점 만점을 평균 내므로 문항 수와 상관없이 주제 만점은 100점이다
+const TOPIC_MAX = 100;
+// 이만큼 주제를 풀어야 '나의 대한민국 등급'을 볼 수 있다
+const GRADE_MIN_TOPICS = 5;
 
 let INDEX = null;     // topics.json
 let PACK = null;      // 지금 푸는 주제
@@ -103,6 +108,8 @@ async function boot() {
   $("btn-next").onclick = next;
   $("btn-back").onclick = () => show("home");
   $("btn-more").onclick = () => { renderGrid(); show("home"); };
+  $("btn-grade").onclick = renderKoreaGrade;
+  $("btn-grade-back").onclick = () => show("home");
   $("btn-retry").onclick = () => start(PACK.id);
   $("btn-share").onclick = share;
   if (p.has("t")) {
@@ -128,6 +135,32 @@ function renderGrid() {
     b.onclick = () => start(t.id);
     $("topic-grid").appendChild(b);
   });
+
+  // 등급 버튼 — 위에서 센 '푼 주제 수(n)'를 그대로 쓴다
+  const left = Math.max(0, GRADE_MIN_TOPICS - n);
+  $("btn-grade").disabled = left > 0;
+  $("grade-need").textContent = left > 0 ? `등급 확인까지 ${left}개 남았어요` : "";
+}
+
+/* ── 나의 대한민국 등급 ───────────────────────────
+ * 지금 목록에 있는 주제 가운데 푼 것만 모아, 각 점수를 주제 만점으로 나눠 100점 기준으로
+ * 바꾼 뒤 평균 낸다. 안 푼 주제는 빠진다. 평균은 사사오입해 정수로 만든 뒤 등급표와 비교한다 */
+function renderKoreaGrade() {
+  const done = doneMap();
+  const solved = INDEX.topics.filter((t) => t.id in done);
+  if (solved.length < GRADE_MIN_TOPICS) return;
+  const pct = (t) => (done[t.id] / TOPIC_MAX) * 100;
+  const avg = Math.round(solved.reduce((s, t) => s + pct(t), 0) / solved.length);
+  const g = INDEX.korea_grades.find((x) => avg >= x.min) || INDEX.korea_grades.at(-1);
+
+  $("kgrade-letter").textContent = g.letter;
+  $("kgrade-score").innerHTML = `${avg}<span>점</span>`;
+  $("kgrade-basis").textContent = `${TOPIC_MAX}점 만점 · 푼 주제 ${solved.length}개 평균`;
+  $("kgrade-name").textContent = g.name;
+  $("kgrade-desc").textContent = g.desc;
+  $("kgrade-list").innerHTML = solved.map((t) =>
+    `<li><span>${t.emoji} ${t.title}</span><b>${Math.round(pct(t))}점</b></li>`).join("");
+  show("grade");
 }
 
 async function start(id) {
@@ -219,8 +252,7 @@ function renderResult() {
   $("score").innerHTML = `${total}<span>점</span>`;
   $("grade").textContent = g.name;
   $("grade-emoji").textContent = g.emoji || "";
-  // 문항마다 100점 만점을 평균 내므로 문항 수와 상관없이 만점은 100점이다
-  $("score-max").textContent = "100점 만점";
+  $("score-max").textContent = `${TOPIC_MAX}점 만점`;
   const hits = PACK.questions.filter((q, i) => q.type === "choice" && answers[i] === q.answer).length;
   // 정답 · 오답 개수는 맞고 틀림이 분명한 택1 문항으로만 된 주제에서 보여 준다 (슬라이더 주제는 숨김)
   $("result-counts").hidden = !PACK.questions.every((q) => q.type === "choice");
