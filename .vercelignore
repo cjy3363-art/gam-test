@@ -2,3 +2,6 @@ tools/
 data/
 .claude/
 시안.png
+시안-v2.png
+태극기 *.png
+.env*
